@@ -100,6 +100,7 @@ im_width, im_height, channels = list(map(int, args['x_dim'].split(',')))
 print(args)
 for key,v in args.items(): exec(key+'=v')
 
+device = torch.device("cpu")
 # RANDOM SEED
 #torch.manual_seed(seed)
 #if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
@@ -108,13 +109,10 @@ for key,v in args.items(): exec(key+'=v')
 
 
 # set environment variables: gpu, num_thread
-os.environ["CUDA_VISIBLE_DEVICES"] = str(args['gpu'])
 #os.environ["OMP_NUM_THREADS"] = "4"
 #os.environ["MKL_NUM_THREADS"] = "4"
-torch.set_num_threads(2)
 
 ## if "THCudaCheck FAIL file=/pytorch/aten/src/THC/THCGeneral.cpp line=405 error=11 : invalid argument" error occurs on GTX 2080Ti, set the following to False
-torch.backends.cudnn.benchmark = True
 
 
 def _init_():
@@ -137,9 +135,9 @@ def main():
     # Step 1: init dataloader
     print("init data loader")
     args_data = {}
-    args_data['x_dim'] = x_dim
-    args_data['ratio'] = ratio
-    args_data['seed'] = seed
+    args_data['x_dim'] = x_dim # (84, 84, 3)
+    args_data['ratio'] = ratio # 1
+    args_data['seed'] = seed # 1000
     if dataset=='mini':
         loader_train = dataset_mini(n_examples, n_episodes, 'train', args_data)
         loader_val   = dataset_mini(n_examples, n_episodes, 'val', args_data)
@@ -151,8 +149,8 @@ def main():
         loader_train.load_data()
         loader_val.load_data()
     else:
-        loader_train.load_data_pkl()
-        loader_val.load_data_pkl()
+        loader_train.load_data_pkl() # (64, 600, 84, 84, 3)
+        loader_val.load_data_pkl() # (16, 600, 84, 84, 3)
     
 
     # Step 2: init neural networks
@@ -160,7 +158,7 @@ def main():
 
     # construct the model
     model = models.LabelPropagation(args)
-    model.cuda(0)
+    model.to(device)
 
     # optimizer
     model_optim = torch.optim.Adam(model.parameters(), lr=lr)
@@ -192,20 +190,20 @@ def main():
             # set train mode
             model.train()
 
-            # sample data for next batch
+            # sample data for next batch, support: (n_way, n_suport, H, W, C) -> (5, 5, 84, 84, 3), s_labels: (5, 5), query: (5, 15, 84, 84, 3), q_labels: (5, 15), unlabel: list size 为 0即[]
             support, s_labels, query, q_labels, unlabel = loader_train.next_data(n_way, n_shot, n_query)
             support = np.reshape(support, (support.shape[0]*support.shape[1],)+support.shape[2:])
-            support = torch.from_numpy(np.transpose(support, (0,3,1,2)))
+            support = torch.from_numpy(np.transpose(support, (0,3,1,2))) # (25, 3, 84, 84)
             query   = np.reshape(query, (query.shape[0]*query.shape[1],)+query.shape[2:])
-            query   = torch.from_numpy(np.transpose(query, (0,3,1,2)))
-            s_labels = torch.from_numpy(np.reshape(s_labels,(-1,)))
-            q_labels = torch.from_numpy(np.reshape(q_labels,(-1,)))
+            query   = torch.from_numpy(np.transpose(query, (0,3,1,2))) # (75, 3, 84, 84)
+            s_labels = torch.from_numpy(np.reshape(s_labels,(-1,))) # (25, )
+            q_labels = torch.from_numpy(np.reshape(q_labels,(-1,))) # (75, )
             s_labels = s_labels.type(torch.LongTensor)
             q_labels = q_labels.type(torch.LongTensor)
-            s_onehot = torch.zeros(n_way*n_shot, n_way).scatter_(1, s_labels.view(-1,1), 1)
-            q_onehot = torch.zeros(n_way*n_query, n_way).scatter_(1, q_labels.view(-1,1), 1)
+            s_onehot = torch.zeros(n_way*n_shot, n_way).scatter_(1, s_labels.view(-1,1), 1) # (25, 5) 由于每次只会取5个class(n_way)出来，因此维度是5
+            q_onehot = torch.zeros(n_way*n_query, n_way).scatter_(1, q_labels.view(-1,1), 1) # (75, 5)
 
-            inputs = [support.cuda(0), s_onehot.cuda(0), query.cuda(0), q_onehot.cuda(0)]
+            inputs = [support.to(device), s_onehot.to(device), query.to(device), q_onehot.to(device)]
             
             loss, acc = model(inputs)
             loss_tr.append(loss.item())
@@ -235,7 +233,7 @@ def main():
             q_onehot = torch.zeros(n_test_way*n_test_query, n_test_way).scatter_(1, q_labels.view(-1,1), 1)
             
             with torch.no_grad():
-                inputs = [support.cuda(0), s_onehot.cuda(0), query.cuda(0), q_onehot.cuda(0)]
+                inputs = [support.to(device), s_onehot.to(device), query.to(device), q_onehot.to(device)]
                 loss, acc = model(inputs)
 
             loss_val.append(loss.item() )

@@ -11,8 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
-
-
+from train import device
 class CNNEncoder(nn.Module):
     """Encoder for feature embedding"""
     def __init__(self, args):
@@ -74,7 +73,7 @@ class RelationNetwork(nn.Module):
 
     def forward(self, x, rn):
         
-        x = x.view(-1,64,5,5)
+        x = x.view(-1,64,5,5) # (100, 64, 5, 5)
         
         out = self.layer1(x)
         out = self.layer2(out)
@@ -120,7 +119,7 @@ class Prototypical(nn.Module):
         emb_q = torch.unsqueeze(emb_q,1)     # Nx1xD
         dist  = ((emb_q-emb_s)**2).mean(2)   # NxNxD -> NxN
 
-        ce = nn.CrossEntropyLoss().cuda(0)
+        ce = nn.CrossEntropyLoss().to(device)
         loss = ce(-dist, torch.argmax(q_labels,1))
         ## acc
         pred = torch.argmax(-dist,1)
@@ -137,16 +136,16 @@ class LabelPropagation(nn.Module):
     def __init__(self, args):
         super(LabelPropagation, self).__init__()
         self.im_width, self.im_height, self.channels = list(map(int, args['x_dim'].split(',')))
-        self.h_dim, self.z_dim = args['h_dim'], args['z_dim']
+        self.h_dim, self.z_dim = args['h_dim'], args['z_dim'] # h_dim: 64, z_dim: h_dim
 
         self.args = args
         self.encoder = CNNEncoder(args)
         self.relation = RelationNetwork()
 
         if   args['rn'] == 300:   # learned sigma, fixed alpha
-            self.alpha = torch.tensor([args['alpha']], requires_grad=False).cuda(0)
+            self.alpha = torch.tensor([args['alpha']], requires_grad=False)
         elif args['rn'] == 30:    # learned sigma, learned alpha
-            self.alpha = nn.Parameter(torch.tensor([args['alpha']]).cuda(0), requires_grad=True)
+            self.alpha = nn.Parameter(torch.tensor([args['alpha']]), requires_grad=True)
 
     def forward(self, inputs):
         """
@@ -165,8 +164,8 @@ class LabelPropagation(nn.Module):
         num_queries = int(query.shape[0] / num_classes)
 
         # Step1: Embedding
-        inp     = torch.cat((support,query), 0)
-        emb_all = self.encoder(inp).view(-1,1600)
+        inp     = torch.cat((support,query), 0) # (100, 3, 84, 84) 将suport和query set concat在一块
+        emb_all = self.encoder(inp).view(-1,1600) # (100, 1600) 合并在一起提取特征
         N, d    = emb_all.shape[0], emb_all.shape[1]
 
         # Step2: Graph Construction
@@ -175,38 +174,38 @@ class LabelPropagation(nn.Module):
             self.sigma   = self.relation(emb_all, self.args['rn'])
             
             ## W
-            emb_all = emb_all / (self.sigma+eps) # N*d
+            emb_all = emb_all / (self.sigma+eps) # N*d -> (100, 1600)
             emb1    = torch.unsqueeze(emb_all,1) # N*1*d
             emb2    = torch.unsqueeze(emb_all,0) # 1*N*d
-            W       = ((emb1-emb2)**2).mean(2)   # N*N*d -> N*N
+            W       = ((emb1-emb2)**2).mean(2)   # N*N*d -> N*N，实现wij = (fi - fj)**2
             W       = torch.exp(-W/2)
 
         ## keep top-k values
         if self.args['k']>0:
-            topk, indices = torch.topk(W, self.args['k'])
+            topk, indices = torch.topk(W, self.args['k']) # topk: (100, 20), indices: (100, 20)
             mask = torch.zeros_like(W)
-            mask = mask.scatter(1, indices, 1)
-            mask = ((mask+torch.t(mask))>0).type(torch.float32)      # union, kNN graph
+            mask = mask.scatter(1, indices, 1) # (100, 100)
+            mask = ((mask+torch.t(mask))>0).type(torch.float32) #torch.t() 期望 input 为<= 2-D张量并转置尺寸0和1。   # union, kNN graph
             #mask = ((mask>0)&(torch.t(mask)>0)).type(torch.float32)  # intersection, kNN graph
-            W    = W*mask
+            W    = W*mask # 构建无向图，上面的mask是为了保证把wij和wji都保留下来
 
         ## normalize
-        D       = W.sum(0)
-        D_sqrt_inv = torch.sqrt(1.0/(D+eps))
-        D1      = torch.unsqueeze(D_sqrt_inv,1).repeat(1,N)
-        D2      = torch.unsqueeze(D_sqrt_inv,0).repeat(N,1)
+        D       = W.sum(0) # (100, )
+        D_sqrt_inv = torch.sqrt(1.0/(D+eps)) # (100, )
+        D1      = torch.unsqueeze(D_sqrt_inv,1).repeat(1,N) # (100, 100)
+        D2      = torch.unsqueeze(D_sqrt_inv,0).repeat(N,1) # (100, 100)
         S       = D1*W*D2
 
         # Step3: Label Propagation, F = (I-\alpha S)^{-1}Y
-        ys = s_labels
-        yu = torch.zeros(num_classes*num_queries, num_classes).cuda(0)
-        #yu = (torch.ones(num_classes*num_queries, num_classes)/num_classes).cuda(0)
-        y  = torch.cat((ys,yu),0)
-        F  = torch.matmul(torch.inverse(torch.eye(N).cuda(0)-self.alpha*S+eps), y)
-        Fq = F[num_classes*num_support:, :] # query predictions
+        ys = s_labels # (25, 5)
+        yu = torch.zeros(num_classes*num_queries, num_classes).to(device) # (75, 5)
+        #yu = (torch.ones(num_classes*num_queries, num_classes)/num_classes).to(device)
+        y  = torch.cat((ys,yu),0) # (100, 5)用supoort set的label去预测query的label
+        F  = torch.matmul(torch.inverse(torch.eye(N).to(device)-self.alpha*S+eps), y) # (100, 5)
+        Fq = F[num_classes*num_support:, :] # query predictions，loss计算support和query set一起算，acc计算只计算query
         
         # Step4: Cross-Entropy Loss
-        ce = nn.CrossEntropyLoss().cuda(0)
+        ce = nn.CrossEntropyLoss().to(device)
         ## both support and query loss
         gt = torch.argmax(torch.cat((s_labels, q_labels), 0), 1)
         loss = ce(F, gt)

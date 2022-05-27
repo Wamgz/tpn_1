@@ -22,6 +22,7 @@ import scipy.stats
 
 from dataset_mini import *
 from dataset_tiered import *
+from train import device
 
 
 parser = argparse.ArgumentParser(description='Train transudctive propagation networks')
@@ -148,7 +149,7 @@ def main():
 
     # construct the model
     model = models.LabelPropagation(args)
-    model.cuda(0)
+    model.to(device)
 
     # load the saved model
     if iters>0:
@@ -186,7 +187,7 @@ def main():
             q_onehot = torch.zeros(n_test_way*n_test_query, n_test_way).scatter_(1, q_labels.view(-1,1), 1)
 
             with torch.no_grad():
-                inputs = [support.cuda(0), s_onehot.cuda(0), query.cuda(0), q_onehot.cuda(0)]
+                inputs = [support.to(device), s_onehot.to(device), query.to(device), q_onehot.to(device)]
                 loss, acc = model(inputs)
             
             list_acc.append(acc.item())
