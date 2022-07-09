@@ -15,7 +15,7 @@ class dataset_mini(object):
         self.split = split
         self.ratio = args['ratio']
         self.seed = args['seed']
-        self.root_dir = '/mnt21t/home/wyh/WZ/data/miniImagenet/data'
+        self.root_dir = '/mnt21t/home/wyh/WZ/data'
 
         self.n_label = int(self.ratio * self.n_examples)
         self.n_unlabel = self.n_examples - self.n_label
