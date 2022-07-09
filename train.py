@@ -159,8 +159,7 @@ def main():
     print("init neural networks")
 
     # construct the model
-    model = models.LabelPropagation(args)
-    model.cuda()
+    model = models.LabelPropagation(args).cuda()
 
     # optimizer
     model_optim = torch.optim.Adam(model.parameters(), lr=lr)

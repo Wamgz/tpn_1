@@ -200,7 +200,6 @@ class LabelPropagation(nn.Module):
         yu = torch.zeros(num_classes*num_queries, num_classes).cuda() # (75, 5)
         #yu = (torch.ones(num_classes*num_queries, num_classes)/num_classes).cuda()
         y  = torch.cat((ys,yu),0) # (100, 5)用supoort set的label去预测query的label
-        print(eps.device, S.device, self.alpha.device)
         F  = torch.matmul(torch.inverse(torch.eye(N).cuda() - self.alpha*S+eps), y) # (100, 5)
         Fq = F[num_classes*num_support:, :] # query predictions，loss计算support和query set一起算，acc计算只计算query
         
