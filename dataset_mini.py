@@ -15,7 +15,7 @@ class dataset_mini(object):
         self.split = split
         self.ratio = args['ratio']
         self.seed = args['seed']
-        self.root_dir = '~/WZ/data/miniImagenet/data'
+        self.root_dir = '~/WZ/data'
 
         self.n_label = int(self.ratio * self.n_examples)
         self.n_unlabel = self.n_examples - self.n_label
@@ -72,7 +72,7 @@ class dataset_mini(object):
         """
             load the pkl processed mini-imagenet into label,unlabel
         """
-        pkl_name = '{}/mini-imagenet-cache-{}.pkl'.format(self.root_dir, self.split)
+        pkl_name = '{}/miniImagenet/data/mini-imagenet-cache-{}.pkl'.format(self.root, self.split)
         print('Loading pkl dataset: {} '.format(pkl_name))
 
         try:
