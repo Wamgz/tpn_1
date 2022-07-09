@@ -154,7 +154,7 @@ class LabelPropagation(nn.Module):
             q_labels:   (N_way*N_query)xN_way, one-hot
         """
         # init
-        eps = torch.finfo(torch.float32).eps
+        eps = torch.finfo(torch.float32).eps.cuda()
 
         [support, s_labels, query, q_labels] = inputs
         num_classes = s_labels.shape[1] # 5
