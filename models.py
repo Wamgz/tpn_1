@@ -181,7 +181,7 @@ class LabelPropagation(nn.Module):
         ## keep top-k values
         if self.args['k']>0:
             topk, indices = torch.topk(W, self.args['k']) # topk: (100, 20), indices: (100, 20)
-            mask = torch.zeros_like(W)
+            mask = torch.zeros_like(W).cuda()
             mask = mask.scatter(1, indices, 1) # (100, 100)
             mask = ((mask+torch.t(mask))>0).type(torch.float32) #torch.t() 期望 input 为<= 2-D张量并转置尺寸0和1。   # union, kNN graph
             #mask = ((mask>0)&(torch.t(mask)>0)).type(torch.float32)  # intersection, kNN graph
@@ -199,7 +199,7 @@ class LabelPropagation(nn.Module):
         yu = torch.zeros(num_classes*num_queries, num_classes).cuda() # (75, 5)
         #yu = (torch.ones(num_classes*num_queries, num_classes)/num_classes).cuda()
         y  = torch.cat((ys,yu),0) # (100, 5)用supoort set的label去预测query的label
-        F  = torch.matmul(torch.inverse(torch.eye(N).cuda()-self.alpha*S+eps), y) # (100, 5)
+        F  = torch.matmul(torch.inverse(torch.eye(N).cuda() - self.alpha*S+eps), y) # (100, 5)
         Fq = F[num_classes*num_support:, :] # query predictions，loss计算support和query set一起算，acc计算只计算query
         
         # Step4: Cross-Entropy Loss
