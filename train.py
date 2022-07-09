@@ -93,14 +93,15 @@ parser.add_argument('--exp_name',   type=str,   default='exp',      metavar='EXP
 parser.add_argument('--iters',      type=int,   default=0,          metavar='ITERS',
                     help="iteration to restore params")
 
-
 # deal with params
 args = vars(parser.parse_args())
+
+os.environ['CUDA_VISIBLE_DEVICES'] = args['gpu']
+
 im_width, im_height, channels = list(map(int, args['x_dim'].split(',')))
 print(args)
 for key,v in args.items(): exec(key+'=v')
 
-device = torch.device("cpu")
 # RANDOM SEED
 #torch.manual_seed(seed)
 #if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
@@ -158,7 +159,7 @@ def main():
 
     # construct the model
     model = models.LabelPropagation(args)
-    model.to(device)
+    model.cuda()
 
     # optimizer
     model_optim = torch.optim.Adam(model.parameters(), lr=lr)
@@ -203,7 +204,7 @@ def main():
             s_onehot = torch.zeros(n_way*n_shot, n_way).scatter_(1, s_labels.view(-1,1), 1) # (25, 5) 由于每次只会取5个class(n_way)出来，因此维度是5
             q_onehot = torch.zeros(n_way*n_query, n_way).scatter_(1, q_labels.view(-1,1), 1) # (75, 5)
 
-            inputs = [support.to(device), s_onehot.to(device), query.to(device), q_onehot.to(device)]
+            inputs = [support.cuda(), s_onehot.cuda(), query.cuda(), q_onehot.cuda()]
             
             loss, acc = model(inputs)
             loss_tr.append(loss.item())
@@ -233,7 +234,7 @@ def main():
             q_onehot = torch.zeros(n_test_way*n_test_query, n_test_way).scatter_(1, q_labels.view(-1,1), 1)
             
             with torch.no_grad():
-                inputs = [support.to(device), s_onehot.to(device), query.to(device), q_onehot.to(device)]
+                inputs = [support.cuda(), s_onehot.cuda(), query.cuda(), q_onehot.cuda()]
                 loss, acc = model(inputs)
 
             loss_val.append(loss.item() )

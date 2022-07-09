@@ -72,7 +72,7 @@ class dataset_mini(object):
         """
             load the pkl processed mini-imagenet into label,unlabel
         """
-        pkl_name = '{}/data/mini-imagenet-cache-{}.pkl'.format(self.root_dir, self.split)
+        pkl_name = '~/WZ/data/miniImagenet/data/mini-imagenet-cache-{}.pkl'.format(self.root_dir, self.split)
         print('Loading pkl dataset: {} '.format(pkl_name))
 
         try:

@@ -149,7 +149,7 @@ def main():
 
     # construct the model
     model = models.LabelPropagation(args)
-    model.to(device)
+    model.cuda()
 
     # load the saved model
     if iters>0:
@@ -187,7 +187,7 @@ def main():
             q_onehot = torch.zeros(n_test_way*n_test_query, n_test_way).scatter_(1, q_labels.view(-1,1), 1)
 
             with torch.no_grad():
-                inputs = [support.to(device), s_onehot.to(device), query.to(device), q_onehot.to(device)]
+                inputs = [support.cuda(), s_onehot.cuda(), query.cuda(), q_onehot.cuda()]
                 loss, acc = model(inputs)
             
             list_acc.append(acc.item())

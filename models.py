@@ -75,14 +75,14 @@ class RelationNetwork(nn.Module):
         
         x = x.view(-1,64,5,5) # (100, 64, 5, 5)
         
-        out = self.layer1(x)
-        out = self.layer2(out)
+        out = self.layer1(x) # （100, 64, 3, 3）
+        out = self.layer2(out) # (100, 1, 2, 2)
         # flatten
-        out = out.view(out.size(0),-1) 
-        out = F.relu(self.fc3(out))
-        out = self.fc4(out) # no relu
+        out = out.view(out.size(0),-1) # (100 ,4)
+        out = F.relu(self.fc3(out)) # (100 ,8)
+        out = self.fc4(out) # (100, 1)
 
-        out = out.view(out.size(0),-1) # bs*1
+        out = out.view(out.size(0),-1) # (100, 1)
 
         return out
 
@@ -119,7 +119,7 @@ class Prototypical(nn.Module):
         emb_q = torch.unsqueeze(emb_q,1)     # Nx1xD
         dist  = ((emb_q-emb_s)**2).mean(2)   # NxNxD -> NxN
 
-        ce = nn.CrossEntropyLoss().to(device)
+        ce = nn.CrossEntropyLoss().cuda()
         loss = ce(-dist, torch.argmax(q_labels,1))
         ## acc
         pred = torch.argmax(-dist,1)
@@ -159,9 +159,9 @@ class LabelPropagation(nn.Module):
         eps = np.finfo(float).eps
 
         [support, s_labels, query, q_labels] = inputs
-        num_classes = s_labels.shape[1]
-        num_support = int(s_labels.shape[0] / num_classes)
-        num_queries = int(query.shape[0] / num_classes)
+        num_classes = s_labels.shape[1] # 5
+        num_support = int(s_labels.shape[0] / num_classes) # 5
+        num_queries = int(query.shape[0] / num_classes) # 15
 
         # Step1: Embedding
         inp     = torch.cat((support,query), 0) # (100, 3, 84, 84) 将suport和query set concat在一块
@@ -171,7 +171,7 @@ class LabelPropagation(nn.Module):
         # Step2: Graph Construction
         ## sigmma
         if self.args['rn'] in [30,300]:
-            self.sigma   = self.relation(emb_all, self.args['rn'])
+            self.sigma   = self.relation(emb_all, self.args['rn']) # (100, 1)
             
             ## W
             emb_all = emb_all / (self.sigma+eps) # N*d -> (100, 1600)
@@ -198,14 +198,14 @@ class LabelPropagation(nn.Module):
 
         # Step3: Label Propagation, F = (I-\alpha S)^{-1}Y
         ys = s_labels # (25, 5)
-        yu = torch.zeros(num_classes*num_queries, num_classes).to(device) # (75, 5)
-        #yu = (torch.ones(num_classes*num_queries, num_classes)/num_classes).to(device)
+        yu = torch.zeros(num_classes*num_queries, num_classes).cuda() # (75, 5)
+        #yu = (torch.ones(num_classes*num_queries, num_classes)/num_classes).cuda()
         y  = torch.cat((ys,yu),0) # (100, 5)用supoort set的label去预测query的label
-        F  = torch.matmul(torch.inverse(torch.eye(N).to(device)-self.alpha*S+eps), y) # (100, 5)
+        F  = torch.matmul(torch.inverse(torch.eye(N).cuda()-self.alpha*S+eps), y) # (100, 5)
         Fq = F[num_classes*num_support:, :] # query predictions，loss计算support和query set一起算，acc计算只计算query
         
         # Step4: Cross-Entropy Loss
-        ce = nn.CrossEntropyLoss().to(device)
+        ce = nn.CrossEntropyLoss().cuda()
         ## both support and query loss
         gt = torch.argmax(torch.cat((s_labels, q_labels), 0), 1)
         loss = ce(F, gt)
@@ -217,6 +217,3 @@ class LabelPropagation(nn.Module):
         acc = 1.0 * correct.float() / float(total)
 
         return loss, acc
-
-
-
