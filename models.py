@@ -193,6 +193,7 @@ class LabelPropagation(nn.Module):
         D1      = torch.unsqueeze(D_sqrt_inv,1).repeat(1,N) # (100, 100)
         D2      = torch.unsqueeze(D_sqrt_inv,0).repeat(N,1) # (100, 100)
         S       = D1*W*D2
+        S       = S.cuda()
 
         # Step3: Label Propagation, F = (I-\alpha S)^{-1}Y
         ys = s_labels # (25, 5)
