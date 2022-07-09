@@ -5,13 +5,11 @@
 # All Rights Reserved
 #-------------------------------------
 
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
-from train import device
 class CNNEncoder(nn.Module):
     """Encoder for feature embedding"""
     def __init__(self, args):
