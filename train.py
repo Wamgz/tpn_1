@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from dataset_mini import *
 from dataset_tiered import *
-
+import sys
 cur_path=os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, cur_path+"/..")
 parser = argparse.ArgumentParser(description='Train transudctive propagation networks')
