@@ -21,7 +21,8 @@ from tqdm import tqdm
 from dataset_mini import *
 from dataset_tiered import *
 
-
+cur_path=os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, cur_path+"/..")
 parser = argparse.ArgumentParser(description='Train transudctive propagation networks')
 # parse gpu
 parser.add_argument('--gpu',        type=str,   default='1',          metavar='GPU',
