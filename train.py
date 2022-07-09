@@ -24,7 +24,7 @@ from dataset_tiered import *
 
 parser = argparse.ArgumentParser(description='Train transudctive propagation networks')
 # parse gpu
-parser.add_argument('--gpu',        type=int,   default=1,          metavar='GPU',
+parser.add_argument('--gpu',        type=str,   default='1',          metavar='GPU',
                     help="gpus, default:0")
 # model params
 n_examples = 600
