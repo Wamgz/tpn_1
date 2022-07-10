@@ -5,6 +5,7 @@ import pickle as pkl
 import os
 import glob
 import csv
+from torchvision import transforms as transforms
 
 
 class dataset_mini(object):
@@ -23,7 +24,13 @@ class dataset_mini(object):
         self.dataset_u = []
 
         self.args = args
+        tsfm = []
+        tsfm.append(transforms.ToPILImage())
 
+        tsfm.append(transforms.Resize((96, 96)))
+
+        tsfm.append(transforms.ToTensor())
+        self.tsfm = tsfm
     def load_data(self):
         """
             Load data into memory and partition into label,unlabel
