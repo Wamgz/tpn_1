@@ -229,13 +229,15 @@ class ViT(nn.Module):
         self.total_class = total_class
         self.use_dual_feature = use_dual_feature
         self.avg_pool_64 = nn.AdaptiveAvgPool1d(64)
-    def forward(self, imgs, labels):
+    def forward(self, batch):
         '''
         :param imgs: (batch, C, H, W) -> (100, 3, 96, 96)
         :param labels: (batch, ) -> (100, )
         :return:
         '''
         ## patch embedding
+        sup_imgs, query_imgs, sup_labels, query_labels = batch
+        imgs, labels = torch.cat((sup_imgs, query_imgs), dim=0), torch.cat((sup_labels, query_labels), dim=0)
         x = self.to_patch_embedding(imgs) # (batch, num_patch, patch_size * patch_size) -> (100, 12 * 12, 64)
         if self.use_dual_feature:
             x_1 = self.to_patch_embedding(F.interpolate(imgs, [64, 64]))
