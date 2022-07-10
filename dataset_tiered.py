@@ -7,6 +7,7 @@ import glob
 import csv
 from   tqdm import tqdm
 import cv2
+from torchvision import transforms as transforms
 
 class dataset_tiered(object):
     def __init__(self, n_examples, n_episodes, split, args):
@@ -21,7 +22,11 @@ class dataset_tiered(object):
         self.iamge_data = []
         self.dict_index_label = []
         self.dict_index_unlabel = []
-    
+
+        self.tsfm = []
+        self.tsfm.append(transforms.ToPILImage())
+        self.tsfm.append(transforms.Resize((self.im_height, self.im_width)))
+        self.tsfm.append(transforms.ToTensor())
 
 
     def load_data_pkl(self):
@@ -110,6 +115,8 @@ class dataset_tiered(object):
             idx1            = idx[0:n_shot + n_query]
             support[i]      = self.image_data[idx1[:n_shot]]
             query[i]        = self.image_data[idx1[n_shot:]]
+            support[i] = self.tsfm(support[i])
+            query[i] = self.tsfm(query[i])
 
             # unlabel
             if num_unlabel>0:
