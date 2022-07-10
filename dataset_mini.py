@@ -30,7 +30,7 @@ class dataset_mini(object):
         tsfm.append(transforms.Resize((96, 96)))
 
         tsfm.append(transforms.ToTensor())
-        self.tsfm = tsfm
+        self.tsfm = transforms.Compose(tsfm)
     def load_data(self):
         """
             Load data into memory and partition into label,unlabel
