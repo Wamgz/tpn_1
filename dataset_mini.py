@@ -138,9 +138,8 @@ class dataset_mini(object):
         for i, cls in enumerate(selected_classes[0:n_way]):  # train way
             # labled data
             idx1 = np.random.permutation(self.n_label)[:n_shot + n_query] # 从trainset里取出support set和query set
-            support[i] = self.dataset_l[cls, idx1[:n_shot]]
-            query[i] = self.dataset_l[cls, idx1[n_shot:]]
-
+            support[i] = self.tsfm(self.dataset_l[cls, idx1[:n_shot]])
+            query[i] = self.tsfm(self.dataset_l[cls, idx1[n_shot:]])
             # unlabel
             if num_unlabel > 0:
                 idx2 = np.random.permutation(self.n_unlabel)[:num_unlabel]
