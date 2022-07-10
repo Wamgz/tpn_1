@@ -81,7 +81,7 @@ parser.add_argument('--sigma',      type=float, default=0.25,       metavar='SIG
                     help="Initial sigma in label propagation")
 parser.add_argument('--alpha',      type=float, default=0.99,       metavar='ALPHA',
                     help="Initial alpha in label propagation")
-parser.add_argument('--rn',         type=int,   default=300,        metavar='RN',
+parser.add_argument('--rn',         type=int,   default=30,        metavar='RN',
                     help="graph construction types: "
                     "300: sigma is learned, alpha is fixed" +
                     "30:  both sigma and alpha learned")

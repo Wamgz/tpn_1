@@ -143,7 +143,7 @@ class LabelPropagation(nn.Module):
         if   args['rn'] == 300:   # learned sigma, fixed alpha
             self.alpha = torch.tensor([args['alpha']], requires_grad=False)
         elif args['rn'] == 30:    # learned sigma, learned alpha
-            self.alpha = nn.Parameter(torch.tensor([args['alpha']]), requires_grad=True)
+            self.alpha = torch.tensor([args['alpha']], requires_grad=True)
 
     def forward(self, inputs):
         """
