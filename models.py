@@ -141,9 +141,9 @@ class LabelPropagation(nn.Module):
         self.relation = RelationNetwork()
 
         if   args['rn'] == 300:   # learned sigma, fixed alpha
-            self.alpha = torch.tensor([args['alpha']], requires_grad=False)
+            self.alpha = torch.tensor([args['alpha']], requires_grad=False).cuda()
         elif args['rn'] == 30:    # learned sigma, learned alpha
-            self.alpha = torch.tensor([args['alpha']], requires_grad=True)
+            self.alpha = torch.tensor([args['alpha']], requires_grad=True).cuda()
 
     def forward(self, inputs):
         """
