@@ -5,7 +5,6 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 import timm
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from src.utils.logger_utils import logger
 import torch.nn.functional as F
 
 # helpers
