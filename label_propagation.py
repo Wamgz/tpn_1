@@ -236,7 +236,8 @@ class ViT(nn.Module):
         :return:
         '''
         ## patch embedding
-        sup_imgs, query_imgs, sup_labels, query_labels = batch
+        [sup_imgs, query_imgs, sup_labels, query_labels] = batch
+        print(sup_imgs.shape, query_imgs.shape, sup_labels.shape, query_labels.shape)
         imgs, labels = torch.cat((sup_imgs, query_imgs), dim=0), torch.cat((sup_labels, query_labels), dim=0)
         x = self.to_patch_embedding(imgs) # (batch, num_patch, patch_size * patch_size) -> (100, 12 * 12, 64)
         if self.use_dual_feature:
