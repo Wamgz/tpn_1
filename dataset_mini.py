@@ -24,13 +24,13 @@ class dataset_mini(object):
         self.dataset_u = []
 
         self.args = args
-        tsfm = []
-        tsfm.append(transforms.ToPILImage())
-
-        tsfm.append(transforms.Resize((96, 96)))
-
-        tsfm.append(transforms.ToTensor())
-        self.tsfm = transforms.Compose(tsfm)
+        # tsfm = []
+        # tsfm.append(transforms.ToPILImage())
+        #
+        # tsfm.append(transforms.Resize((96, 96)))
+        #
+        # tsfm.append(transforms.ToTensor())
+        # self.tsfm = transforms.Compose(tsfm)
     def load_data(self):
         """
             Load data into memory and partition into label,unlabel
@@ -138,9 +138,8 @@ class dataset_mini(object):
         for i, cls in enumerate(selected_classes[0:n_way]):  # train way
             # labled data
             idx1 = np.random.permutation(self.n_label)[:n_shot + n_query] # 从trainset里取出support set和query set
-            print(self.dataset_l[cls, idx1[:n_shot]].shape)
-            support[i] = self.tsfm(self.dataset_l[cls, idx1[:n_shot]])
-            query[i] = self.tsfm(self.dataset_l[cls, idx1[n_shot:]])
+            support[i] = self.dataset_l[cls, idx1[:n_shot]]
+            query[i] = self.dataset_l[cls, idx1[n_shot:]]
             # unlabel
             if num_unlabel > 0:
                 idx2 = np.random.permutation(self.n_unlabel)[:num_unlabel]
