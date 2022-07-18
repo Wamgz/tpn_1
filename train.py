@@ -162,20 +162,20 @@ def main():
 
     # construct the model
     model = models.LabelPropagation(args).cuda()
-    model = label_propagation.ViT(
-        image_size=96,
-        patch_size=16,
-        out_dim=64,
-        embed_dim=64,
-        depth=4,
-        heads=8,
-        dim_head=8,
-        mlp_dim=64,
-        tsfm_dropout=0.1,
-        emb_dropout=0.1,
-        use_avg_pool_out=True,
-        channels=3
-    ).cuda()
+    # model = label_propagation.ViT(
+    #     image_size=96,
+    #     patch_size=16,
+    #     out_dim=64,
+    #     embed_dim=64,
+    #     depth=4,
+    #     heads=8,
+    #     dim_head=8,
+    #     mlp_dim=64,
+    #     tsfm_dropout=0.1,
+    #     emb_dropout=0.1,
+    #     use_avg_pool_out=True,
+    #     channels=3
+    # ).cuda()
     # optimizer
     model_optim = torch.optim.Adam(model.parameters(), lr=lr)
     model_scheduler = StepLR(model_optim, step_size=step_size, gamma=gamma)
