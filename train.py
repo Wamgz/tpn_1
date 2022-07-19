@@ -220,7 +220,7 @@ def main():
             q_onehot = torch.zeros(n_way*n_query, n_way).scatter_(1, q_labels.view(-1,1), 1) # (75, 5)
 
             inputs = [support.cuda(), s_onehot.cuda(), query.cuda(), q_onehot.cuda()]
-            
+            print(inputs)
             loss, acc = model(inputs)
             loss_tr.append(loss.item())
             acc_tr.append(acc.item())
